@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Carte de la France - Guerre des Départements</title>
+  <style>
+    /* Styles pour les départements */
+    .departement {
+      fill: #aaffaa; /* Vert clair par défaut */
+      stroke: #000000; /* Contour noir */
+      stroke-width: 0.5;
+    }
+    .departement:hover {
+      fill: #ffaaaa; /* Rose clair au survol */
+    }
+    /* Style pour les pixels de la grille */
+    .pixel {
+      stroke: #000;
+      stroke-width: 0.1;
+      opacity: 0.5; /* Transparence initiale de la grille */
+    }
+    /* Style pour le SVG (plein écran pour zoomer facilement) */
+    svg {
+      width: 100%;
+      height: 100vh;
+      border: 1px solid #ccc;
+    }
+    object {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+  <!-- Inclure Panzoom pour le zoom et le déplacement -->
+  <script src="https://unpkg.com/panzoom@9.4.3/dist/panzoom.min.js"></script>
+</head>
+<body>
+  <h1>Guerre des Départements - Saison 2</h1>
+  <!-- Importer france-departements.svg -->
+  <object id="map" type="image/svg+xml" data="france-departements.svg">
+    <!-- Fallback si l'objet ne charge pas (optionnel) -->
+    Votre navigateur ne supporte pas les objets SVG.
+  </object>
+  <g class="pixel-grid" style="position: absolute; top: 0; left: 0;">
+    <script>
+      // Générer une grille de pixels
+      const gridSize = 10; // Taille d'un pixel (en unités du viewBox)
+      const cols = Math.floor(800 / gridSize); // 800 = largeur du viewBox (à ajuster selon ton SVG)
+      const rows = Math.floor(600 / gridSize); // 600 = hauteur du viewBox (à ajuster selon ton SVG)
+      const grid = document.querySelector(".pixel-grid");
+      for (let x = 0; x < cols; x++) {
+        for (let y = 0; y < rows; y++) {
+          const pixel = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          pixel.setAttribute("class", "pixel");
+          pixel.setAttribute("x", x * gridSize);
+          pixel.setAttribute("y", y * gridSize);
+          pixel.setAttribute("width", gridSize);
+          pixel.setAttribute("height", gridSize);
+          pixel.setAttribute("fill", "transparent"); // Pixels transparents au départ
+          grid.appendChild(pixel);
+        }
+      }
+    </script>
+  </g>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Initialiser Panzoom sur l'objet SVG
+      const map = document.getElementById("map");
+      const panzoom = Panzoom(map, {
+        maxZoom: 10, // Zoom maximum
+        minZoom: 0.1, // Zoom minimum
+        zoomSpeed: 0.1 // Vitesse de zoom
+      });
+      map.parentElement.addEventListener("wheel", panzoom.zoomWithWheel);
+
+      // Interaction avec les départements (pour tester)
+      const departements = map.contentDocument.querySelectorAll(".departement");
+      departements.forEach(function(departement) {
+        departement.addEventListener("click", function() {
+          const nomDepartement = departement.getAttribute("data-nom");
+          alert("Vous avez cliqué sur : " + nomDepartement);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
