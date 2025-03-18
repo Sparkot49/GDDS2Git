@@ -1,0 +1,13 @@
+.map-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f0f0f0; /* Ajouté pour voir les bords si la carte est mal alignée */
+  }
+  
+  svg {
+    display: block;
+    margin: 0 auto;
+    overflow: visible; /* Assure que tout est visible */
+  }
