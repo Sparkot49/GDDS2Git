@@ -1,0 +1,23 @@
+# Node.js (backend)
+node_modules/
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+# Frontend (React, Angular, Vue, etc.)
+node_modules/
+dist/
+build/
+.DS_Store
+.env
+*.log
+
+# General
+.idea/
+.vscode/
+*.swp
+*.swo
+*.bak
+*.tmp
