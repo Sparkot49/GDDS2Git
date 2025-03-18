@@ -2,17 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ReactSVG } from 'react-svg';
 import './Map.css';
 
-
-
-const Map = () => {
+const Map = ({ onDepartmentSelect }) => {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [gridVisible, setGridVisible] = useState(true);
   const [gridSize, setGridSize] = useState(10); // Taille de la grille en pixels
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [departmentInfo, setDepartmentInfo] = useState({});
   const containerRef = useRef(null);
   const svgRef = useRef(null);
+  const clickTimeoutRef = useRef(null);
 
   // Gestionnaire de zoom
   const handleZoom = (event) => {
@@ -27,12 +28,23 @@ const Map = () => {
   // Gestionnaires de drag pour la navigation
   const handleMouseDown = (e) => {
     if (e.button === 0) { // Clic gauche uniquement
-      setIsDragging(true);
-      setDragStart({ x: e.clientX, y: e.clientY });
+      setIsDragging(false); // On commence par supposer que ce n'est pas un drag
+      
+      // On définit un délai court pour déterminer s'il s'agit d'un clic ou d'un drag
+      clickTimeoutRef.current = setTimeout(() => {
+        setIsDragging(true);
+        setDragStart({ x: e.clientX, y: e.clientY });
+      }, 100); // Délai de 100ms
     }
   };
 
   const handleMouseMove = (e) => {
+    // Si on commence à bouger avant le délai, on annule le timeout
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+    }
+    
     if (isDragging) {
       const dx = e.clientX - dragStart.x;
       const dy = e.clientY - dragStart.y;
@@ -44,8 +56,30 @@ const Map = () => {
     }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e) => {
+    // Si le timeout existe encore, c'était un clic et non un drag
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+      // Ici on pourrait gérer les clics sur la carte
+    }
+    
     setIsDragging(false);
+  };
+
+  // Gérer le clic sur un département
+  const handleDepartmentClick = (deptId, deptName) => {
+    if (!isDragging) {
+      setSelectedDepartment(deptId);
+      setDepartmentInfo({
+        id: deptId,
+        name: deptName
+      });
+      
+      if (onDepartmentSelect) {
+        onDepartmentSelect(deptId, deptName);
+      }
+    }
   };
 
   // Gérer le zoom avec les boutons
@@ -86,6 +120,11 @@ const Map = () => {
         container.removeEventListener('mousemove', handleMouseMove);
         container.removeEventListener('mouseup', handleMouseUp);
         container.removeEventListener('mouseleave', handleMouseUp);
+      }
+      
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = null;
       }
     };
   }, [isDragging, dragStart, position, scale]);
@@ -212,6 +251,32 @@ const Map = () => {
             }
             svg.appendChild(mainGroup);
             
+            // Ajouter des gestionnaires d'événements pour les départements
+            const paths = svg.querySelectorAll('path[data-numerodepartement]');
+            paths.forEach((path) => {
+              const deptId = path.getAttribute('data-numerodepartement');
+              const deptName = path.getAttribute('data-nom');
+              
+              // Couleur par défaut
+              path.setAttribute('fill', '#AAFFAA'); // Vert clair
+              path.setAttribute('stroke', '#000000');
+              path.setAttribute('stroke-width', '1');
+              
+              // Mettre en évidence le département sélectionné
+              if (deptId === selectedDepartment) {
+                path.setAttribute('fill', '#FF9999'); // Rouge clair pour le département sélectionné
+                path.setAttribute('stroke-width', '2');
+              }
+              
+              // Gestionnaire d'événement pour cliquer sur un département
+              path.addEventListener('click', (e) => {
+                e.stopPropagation(); // Éviter la propagation au conteneur
+                handleDepartmentClick(deptId, deptName);
+              });
+              
+              // Ajouter une classe pour le hover
+              path.classList.add('departement');
+            });
           }}
           afterInjection={(svg) => {
             // Appliquer la transformation pour le déplacement
@@ -227,6 +292,19 @@ const Map = () => {
           className="map-svg"
         />
       </div>
+      
+      {/* Afficher des informations sur le département sélectionné */}
+      {selectedDepartment && (
+        <div className="department-info">
+          <h3>Département sélectionné</h3>
+          <p>
+            <strong>Nom :</strong> {departmentInfo.name || 'Non disponible'}
+          </p>
+          <p>
+            <strong>Code :</strong> {departmentInfo.id || 'Non disponible'}
+          </p>
+        </div>
+      )}
     </div>
   );
 };
